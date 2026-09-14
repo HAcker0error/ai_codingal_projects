@@ -1,50 +1,57 @@
 import cv2
+import os
 
-import cv2
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# This always points to the correct location for your installed opencv-python package
-cascade_path = r"D:\destop folder\WEBSITE DEVELOPMENT\real time face dection people count\haarcascade_frontalface_default.xml"
+cascade_path = os.path.join(BASE_DIR,"haarcascade_frontalface_default.xml")
+
+if not os.path.exists(cascade_path):
+    print("Error: haarcascade_frontalface_default.xml was not found.")
+    print("Expected location:")
+    print(cascade_path)
+    exit()
+
 face_cascade = cv2.CascadeClassifier(cascade_path)
 
-# Sanity check — this is the key fix
 if face_cascade.empty():
-    raise IOError(f"Failed to load cascade classifier from: {cascade_path}")
+    print("Error: Could not load the Haar Cascade file.")
+    exit()
 
-# Initialize video capture (use webcam)
-cap = cv2.VideoCapture(0)  # Use the appropriate camera index for your system
+print("Haar Cascade loaded successfully.")
+
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+
 if not cap.isOpened():
-    print("Error: Could not open webcam.")
+    print("Error: Could not open camera 1.")
+    print("Trying camera 0...")
+
+    cap = cv2.VideoCapture(0)
+
+if not cap.isOpened():
+    print("Error: Could not open any camera.")
     exit()
 
 while True:
-    # Capture frame-by-frame
     ret, frame = cap.read()
 
     if not ret:
-        print("Error: Failed to capture image")
+        print("Error: Failed to capture image.")
         break
 
-    # Convert frame to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Detect faces in the grayscale image
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    faces = face_cascade.detectMultiScale(gray,scaleFactor=1.1,minNeighbors=5,minSize=(30, 30))
 
-    # Draw rectangles around faces
+    # Draw rectangles around detected faces
     for (x, y, w, h) in faces:
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        cv2.rectangle(frame,(x, y),(x + w, y + h),(255, 0, 0), 2)
+        cv2.putText(frame,"Face Detected",(x, y - 10),cv2.FONT_HERSHEY_SIMPLEX,0.8,(255, 0, 0),2)
 
-    # Display the count of faces
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(frame, f'People Count: {len(faces)}', (10, 30), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
-    # Display the frame with face detection and people count
-    cv2.imshow('Face Tracking and Counting', frame)
+    cv2.imshow("Face Detection - Press Q to Quit", frame)
 
-    # Exit the loop when the 'q' key is pressed
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
-# Release the webcam and close the window
 cap.release()
 cv2.destroyAllWindows()
