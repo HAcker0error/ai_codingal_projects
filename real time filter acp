@@ -1,0 +1,118 @@
+import cv2
+import numpy as np
+
+
+def apply_filter(image, ftype):
+
+    img = image.copy()
+
+    if ftype == "red_tint":
+        img[:, :, 0] = 0
+        img[:, :, 1] = 0
+
+    elif ftype == "green_tint":
+        img[:, :, 0] = 0
+        img[:, :, 2] = 0
+
+    elif ftype == "blue_tint":
+        img[:, :, 1] = 0
+        img[:, :, 2] = 0
+
+    elif ftype == "sobel":
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        sx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+        sy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+
+        sx = cv2.convertScaleAbs(sx)
+        sy = cv2.convertScaleAbs(sy)
+
+        sob = cv2.bitwise_or(sx, sy)
+
+        img = cv2.cvtColor(sob, cv2.COLOR_GRAY2BGR)
+
+    elif ftype == "canny":
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        can = cv2.Canny(gray, 100, 200)
+
+        img = cv2.cvtColor(can, cv2.COLOR_GRAY2BGR)
+
+    return img
+
+
+def main():
+
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        print("Cannot open camera")
+        return
+
+    ftype = "original"
+
+    print("===================================")
+    print(" Real-Time Image Processing")
+    print("===================================")
+    print("n = Original")
+    print("r = Red filter")
+    print("g = Green filter")
+    print("b = Blue filter")
+    print("s = Sobel edge detection")
+    print("c = Canny edge detection")
+    print("q = Quit")
+    print("===================================")
+
+    while True:
+
+        ret, frame = cap.read()
+
+        if not ret:
+            print("Can't receive frame")
+            break
+
+        out = apply_filter(frame, ftype)
+
+        text = "Filter: " + ftype
+
+        cv2.putText(
+            out,
+            text,
+            (20, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.imshow("Real-Time Image Processing", out)
+
+        key = cv2.waitKey(1) & 0xFF
+
+        if key == ord('n'):
+            ftype = "original"
+
+        elif key == ord('r'):
+            ftype = "red_tint"
+
+        elif key == ord('g'):
+            ftype = "green_tint"
+
+        elif key == ord('b'):
+            ftype = "blue_tint"
+
+        elif key == ord('s'):
+            ftype = "sobel"
+
+        elif key == ord('c'):
+            ftype = "canny"
+
+        elif key == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
